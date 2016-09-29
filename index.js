@@ -6,17 +6,20 @@ const Sequelize = require('sequelize');
 let Meta = null;
 
 /**
- * @desc Provides a usable mechanism to store some metadata in form of
- * key-value pairs in a relational database
+ * @desc Provides a usable extensible mechanism to store some metadata
+ * in form of key-value pairs in a relational database
  * @author Mohamad mehdi Kharatizadeh - m_kharatizadeh@yahoo.com
  */
-class SequelizeDbMeta {
+class SequelizeDbMetaInstance {
   /**
    * @desc initialize model definitions in database
    * @param {Sequelize} sequelize - a reference to an instance of Sequelize
+   * @param {string} name - name of meta table
+   * @param {*=} definitions - extra definitions to use
+   * @param {*=} options - optional optional to pass
    */
-  static init(sequelize) {
-    Meta = sequelize.define('meta', {
+  constructor(sequelize, name, definitions, options) {
+    this._table = sequelize.define(name, Object.assign({
       key: {
         type: Sequelize.TEXT,
         primaryKey: true
@@ -24,10 +27,14 @@ class SequelizeDbMeta {
       value: {
         type: Sequelize.TEXT,
         allowNull: false
+      },
+      expires: {
+        type: Sequelize.DATE,
+        allowNull: true
       }
-    }, {
+    }, definitions), Object.assign({
       timestamps: false
-    });
+    }, options));
   }
 
   /**
@@ -36,9 +43,11 @@ class SequelizeDbMeta {
    * @param {*=} transaction - optional reference to transaction object
    * @return {Promise.<*>} - value stored at key
    */
-  static _get(key, transaction) {
+  _get(key, transaction) {
+    const self = this;
+
     return task.spawn(function* () {
-      let res = yield Meta.findOne(Object.assign({
+      let res = yield self._table.findOne(Object.assign({
         where: {
           key: key
         },
