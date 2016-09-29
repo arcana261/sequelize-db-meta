@@ -1,0 +1,41 @@
+{
+  "name": "sequelize-db-meta",
+  "version": "0.1.0",
+  "description": "Enables a metadata table on database which would contain key-value pairs of data",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "sequelize": "^3.24.3",
+    "sqlite3": "^3.1.4",
+    "xcane": "^0.1.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "eslint": "^3.6.1",
+    "eslint-config-google": "^0.6.0",
+    "jsdoc": "^3.4.1",
+    "mocha": "^3.1.0"
+  },
+  "scripts": {
+    "doc": "jsdoc -r -c ./.jsdocrc.json -d docs",
+    "test": "mocha --reporter spec ./tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arcana261/sequelize-db-meta.git"
+  },
+  "keywords": [
+    "sequelize"
+  ],
+  "engines": {
+    "node": ">=4.4.6"
+  },
+  "author": "Mohamad mehdi Kharatizadeh",
+  "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/arcana261/sequelize-db-meta/issues"
+  },
+  "homepage": "https://github.com/arcana261/sequelize-db-meta#readme"
+}
