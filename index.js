@@ -31,6 +31,191 @@ function scheduleGc(ref, schedule) {
 }
 
 /**
+ * @desc allows for settings prefix to keys
+ * @author Mohamad mehdi Kharatizadeh - m_kharatizadeh@yahoo.com
+ * @private
+ */
+class _SequelizeDbMetaPrefixInstance {
+  /**
+   * @desc creates a new instance of _SequelizeDbMetaPrefixInstance
+   * @param {SequelizeDbMetaInstance} master - instance to master
+   * @param {string} prefix - prefix to use
+   */
+  constructor(master, prefix) {
+    this._master = master;
+    this._prefix = prefix;
+  }
+
+  /**
+   * @desc gets table name
+   * @return {string} - table name
+   */
+  get tableName() {
+    return this._master.tableName();
+  }
+
+  /**
+   * @desc converts key and applies prefix
+   * @param {string} key - key to object
+   * @return {string} - converted key
+   * @private
+   */
+  _convertKey(key) {
+    if (type.isOptional(key)) {
+      return `${this._prefix}*`;
+    }
+
+    return `${this._prefix}${key}`;
+  }
+
+  /**
+   * @desc gets value associated with a key or default if it does not exist
+   * @param {string} key - object key
+   * @param {*} value - default value to use if object does not exist
+   * @param {*=} transaction - optional sequelize transaction
+   * @return {Promise.<*>} - returns value at key or a default value
+   */
+  getOrDefault(key, value, transaction) {
+    return this._master.getOrDefault(
+      this._convertKey(key), value, transaction);
+  }
+
+  /**
+   * @desc gets value associated with a key or null if it does not exist
+   * @param {string} key - object key
+   * @param {*=} transaction - optional sequelize transaction to use
+   * @return {Promise.<*|null>} - value at key or a null
+   */
+  getOrNull(key, transaction) {
+    return this._master.getOrNull(this._convertKey(key), transaction);
+  }
+
+  /**
+   * @desc gets value stored at key or rejects with an error
+   * @param {string} key - object key
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise.<*>} - value stored at key
+   */
+  get(key, transaction) {
+    return this._master.get(this._convertKey(key), transaction);
+  }
+
+  /**
+   * @desc shows whether key is inside storage or not
+   * @param {string} key - object key
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise.<boolean>} - true if key exists
+   */
+  has(key, transaction) {
+    return this._master.has(this._convertKey(key), transaction);
+  }
+
+  /**
+   * @desc deletes value from storage, returns true if value was deleted
+   * @param {string} key - object key
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise.<boolean>} - true if value was deleted
+   */
+  delete(key, transaction) {
+    return this._master.delete(this._convertKey(key), transaction);
+  }
+
+  /**
+   * @desc adds value to database or overwrites existing value
+   * @param {string} key - object key
+   * @param {*} value - new object value
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise} - resolves when value was added
+   */
+  put(key, value, transaction) {
+    return this._master.put(this._convertKey(key), value, transaction);
+  }
+
+  /**
+   * @desc sets expiration time on key in seconds
+   * @param {string} key - object key
+   * @param {number} time - time in seconds
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise} - resolves when value was added
+   */
+  expire(key, time, transaction) {
+    return this._master.expire(key, time, transaction);
+  }
+
+  /**
+   * @desc collects garbage and removes expired items
+   * @return {Promise} - resolves when garbage collection is done
+   */
+  gc() {
+    return this._master.gc();
+  }
+
+  /**
+   * @desc start automatic garbage collection service based on cron-tab
+   * scheduling specification
+   * @param {string} schedule - CRON-tab schedule
+   */
+  monitor(schedule) {
+    this._master.monitor(schedule);
+  }
+
+  /**
+   * @desc clear everything on database
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise} - resolve when database is truncated
+   */
+  clear(transaction) {
+    return this._master.clear(transaction);
+  }
+
+  /**
+   * @desc count number of records using a pattern
+   * @param {string=} pattern - optional pattern to keys
+   * @param {*=} where - optional additional where clause
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise.<number>} - resolves to number of records
+   */
+  count(pattern, where, transaction) {
+    return this._master.count(this._convertKey(pattern), where, transaction);
+  }
+
+  /**
+   * @desc lists records found in database using a pattern
+   * @param {number=} start - optional start of lookup
+   * @param {length=} length - optional length of data
+   * @param {string=} pattern - optional wildcard pattern of keys
+   * @param {*=} where - optional additions to where clause
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise.<Array.<*> >} - filtered records
+   */
+  all(start, length, pattern, where, transaction) {
+    return this._master.all(
+      start, length, this._convertKey(pattern), where, transaction)
+      .then(arr => Promise.resolve(arr.map(record => {
+        const key = record.key.substr(this._prefix.length);
+        const prototype = Object.create(Object.getPrototypeOf(record));
+
+        Object.defineProperty(prototype, 'key', {
+          get: () => key
+        });
+        Object.setPrototypeOf(record, prototype);
+
+        return record;
+      })));
+  }
+
+  /**
+   * @desc add additional prefix to key lookup
+   * @param {string} newPrefix - new prefix to use
+   * @return {SequelizeDbMetaInstance} - new storage with additional prefix
+   */
+  prefix(newPrefix) {
+    return new _SequelizeDbMetaPrefixInstance(
+      this._master, this._convertKey(newPrefix));
+  }
+}
+
+/**
  * @desc Provides a usable extensible mechanism to store some metadata
  * in form of key-value pairs in a relational database
  * @author Mohamad mehdi Kharatizadeh - m_kharatizadeh@yahoo.com
@@ -267,16 +452,19 @@ class SequelizeDbMetaInstance {
 
   /**
    * @desc remove expires items from database
+   * @param {*=} transaction - optional sequelize transaction object
    * @return {Promise} - resolve when expired items are removed
    */
-  gc() {
-    return this._table.destroy({
+  gc(transaction) {
+    return this._table.destroy(Object.assign({
       where: {
         expires: {
           $lte: new Date()
         }
       }
-    });
+    }, type.isOptional(transaction) ? null : {
+      transaction: transaction
+    }));
   }
 
   /**
@@ -369,6 +557,15 @@ class SequelizeDbMetaInstance {
     }, type.isOptional(transaction) ? null : {
       transaction: transaction
     }));
+  }
+
+  /**
+   * @desc prefixes keys accessed by the instance
+   * @param {string} newPrefix - prefix to keys
+   * @return {SequelizeDbMetaInstance} - new instance with prefix set
+   */
+  prefix(newPrefix) {
+    return new _SequelizeDbMetaPrefixInstance(this, newPrefix);
   }
 }
 
@@ -520,6 +717,14 @@ module.exports = Object.freeze({
    * @memberof SequelizeDbMeta
    */
   tableName: () => _globalInstance.tableName,
+
+  /**
+   * @desc sets prefix for keys accessed by meta database
+   * @param {string} newPrefix - prefix to set on keys
+   * @return {SequelizeDbMetaInstance} - a new instance with prefix set
+   * @memberof SequelizeDbMeta
+   */
+  prefix: newPrefix => _globalInstance.prefix(newPrefix),
 
   /**
    * @desc this method is used in mocha test cases to prove

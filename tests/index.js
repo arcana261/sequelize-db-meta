@@ -265,6 +265,49 @@ describe('sequelize-db-meta', () => {
     });
   });
 
+  describe('#prefix()', () => {
+    it('should prefix keys', done => {
+      task.spawn(function* () {
+        yield metaDb.put('key-2', 'value-2');
+        const p = metaDb.prefix('pre-');
+        yield p.put('key-1', 'value-1');
+        expect(yield p.get('key-1')).to.be.equal('value-1');
+        expect(yield metaDb.has('key-1')).to.be.false;
+        expect(yield metaDb.getOrNull('key-1')).to.be.null;
+        expect(yield metaDb.has('pre-key-1')).to.be.true;
+        expect(yield metaDb.get('pre-key-1')).to.be.equal('value-1');
+        expect(yield p.has('key-1')).to.be.true;
+        expect(yield p.getOrNull('key-1')).to.be.equal('value-1');
+        expect(yield p.getOrDefault('key-1', 'default')).to.be.equal('value-1');
+        expect(yield p.count()).to.be.equal(1);
+        expect(yield metaDb.count()).to.be.equal(2);
+        expect(iterable.from(yield p.all()).select(x => x.value).toArray()).to.be.deep.equal(['value-1']);
+        expect(iterable.from(yield p.all()).select(x => x.key).toArray()).to.be.deep.equal(['key-1']);
+        expect(yield p.count('key-*')).to.be.equal(1);
+        expect(iterable.from(yield p.all(null, null, 'key-*')).select(x => x.value).toArray()).to.be.deep.equal(['value-1']);
+        yield p.put('qqq', 'www');
+        expect(yield p.count()).to.be.equal(2);
+        expect(yield p.count('key-*')).to.be.equal(1);
+        expect(iterable.from(yield p.all(null, null, 'key-*')).select(x => x.value).toArray()).to.be.deep.equal(['value-1']);
+        expect(iterable.from(yield p.all()).select(x => x.value).orderBy().toArray()).to.be.deep.equal(['value-1', 'www']);
+      }).then(() => done()).catch(done);
+    });
+
+    it('should prefix itself', done => {
+      task.spawn(function* () {
+        const p = metaDb.prefix('pre-');
+        const q = p.prefix('post-');
+        yield q.put('key-1', 'value-1');
+        expect(yield q.get('key-1')).to.be.equal('value-1');
+        expect(yield p.get('post-key-1')).to.be.equal('value-1');
+        expect(yield metaDb.get('pre-post-key-1')).to.be.equal('value-1');
+        expect((yield q.all()).map(x => [x.key, x.value])).to.be.deep.equal([['key-1', 'value-1']]);
+        expect((yield p.all()).map(x => [x.key, x.value])).to.be.deep.equal([['post-key-1', 'value-1']]);
+        expect((yield metaDb.all()).map(x => [x.key, x.value])).to.be.deep.equal([['pre-post-key-1', 'value-1']]);
+      }).then(() => done()).catch(done);
+    });
+  });
+
   describe('#transactionManagement', () => {
     it('should manage transaction correctly', done => {
       sequelize.transaction(t => task.spawn(function* () {
