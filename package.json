@@ -7,10 +7,10 @@
     "test": "tests"
   },
   "dependencies": {
+    "node-cron": "^1.1.2",
     "sequelize": "^3.24.3",
-    "sqlite3": "^3.1.4",
-    "xcane": "arcana261/xcane",
-    "sequelize": "^3.24.3"
+    "weak": "^1.0.1",
+    "xcane": "arcana261/xcane"
   },
   "devDependencies": {
     "chai": "^3.5.0",
@@ -22,7 +22,7 @@
   },
   "scripts": {
     "doc": "jsdoc -r -c ./.jsdocrc.json -d docs",
-    "test": "mocha --reporter spec ./tests"
+    "test": "mocha -gc --reporter spec ./tests"
   },
   "repository": {
     "type": "git",
