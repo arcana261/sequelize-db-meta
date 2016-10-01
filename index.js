@@ -2,7 +2,6 @@
 
 const task = require('xcane').task;
 const type = require('xcane').type;
-const Sequelize = require('sequelize');
 const cron = require('node-cron');
 const weak = require('weak');
 let __destroyCounter = 0;
@@ -224,11 +223,15 @@ class SequelizeDbMetaInstance {
   /**
    * @desc initialize model definitions in database
    * @param {Sequelize} sequelize - a reference to an instance of Sequelize
-   * @param {string} name - name of meta table
+   * @param {string=} name - name of meta table
    * @param {*=} definitions - extra definitions to use
    * @param {*=} options - optional optional to pass
    */
   constructor(sequelize, name, definitions, options) {
+    if (type.isOptional(name)) {
+      name = '__metadb';
+    }
+
     options = Object.assign({
       timestamps: false
     }, options);
@@ -244,11 +247,11 @@ class SequelizeDbMetaInstance {
 
     this._table = sequelize.define(name, Object.assign({
       key: {
-        type: Sequelize.TEXT,
+        type: sequelize.Sequelize.TEXT,
         primaryKey: true
       },
       value: {
-        type: Sequelize.TEXT,
+        type: sequelize.Sequelize.TEXT,
         allowNull: false,
         get: function parseValue() {
           const value = this.getDataValue('value');
@@ -264,7 +267,7 @@ class SequelizeDbMetaInstance {
         }
       },
       expires: {
-        type: Sequelize.DATE,
+        type: sequelize.Sequelize.DATE,
         allowNull: true
       }
     }, definitions), options);
@@ -587,7 +590,7 @@ module.exports = Object.freeze({
    * @param {Sequelize} sequelize - an instance to sequelize
    */
   init: sequelize => {
-    _globalInstance = new SequelizeDbMetaInstance(sequelize, '__metadb');
+    _globalInstance = new SequelizeDbMetaInstance(sequelize);
   },
 
   /**
