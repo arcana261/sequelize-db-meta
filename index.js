@@ -123,10 +123,11 @@ class _SequelizeDbMetaPrefixInstance {
    * @desc adds value to database or overwrites existing value
    * @param {string} key - object key
    * @param {*} value - new object value
+   * @param {*=} data - additional data to write
    * @param {*=} transaction - optional sequelize transaction object
    * @return {Promise} - resolves when value was added
    */
-  put(key, value, transaction) {
+  put(key, value, data, transaction) {
     return this._master.put(this._convertKey(key), value, transaction);
   }
 
@@ -409,15 +410,18 @@ class SequelizeDbMetaInstance {
    * @desc sets value at target key
    * @param {string} key - key to requested value
    * @param {*} value - any javascript object to store
+   * @param {*=} data - additional optional data to write
    * @param {*=} transaction - optional sequelize transaction object
    * @return {Promise} - resolve when value is created
    */
-  put(key, value, transaction) {
+  put(key, value, data, transaction) {
     return this._table.upsert(Object.assign({
       key: key,
       value: value,
       expires: null
-    }, type.isOptional(transaction) ? null : {transaction: transaction}));
+    }, data), type.isOptional(transaction) ? null : {
+      transaction: transaction
+    });
   }
 
   /**
