@@ -425,6 +425,36 @@ class SequelizeDbMetaInstance {
   }
 
   /**
+   * @desc merge previous value of key into new value
+   * @param {string} key - key to requested value
+   * @param {*} value - any javascript object to store
+   * @param {*=} data - additional optional data to write
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise} - resolve when value is created
+   */
+  assign(key, value, data, transaction) {
+    const self = this;
+
+    return task.spawn(function * task() {
+      if (type.isString(value) || type.isNumber(value) ||
+        type.isBoolean(value) || type.isOptional(value)) {
+        return yield self.put(key, value, data, transaction);
+      }
+
+      const current = yield self._get(key, transaction);
+
+      if (!current.found || type.isString(current.value) ||
+        type.isNumber(current.value) || type.isBoolean(current.value) ||
+        type.isOptional(current.value)) {
+        return yield self.put(key, value, data, transaction);
+      }
+
+      return yield self.put(key, Object.assign(current.value,
+        value), data, transaction);
+    });
+  }
+
+  /**
    * @desc sets expiration time of key
    * @param {string} key - target key
    * @param {number} time - time in seconds
@@ -638,6 +668,17 @@ module.exports = Object.freeze({
    */
   put: (key, value, transaction) =>
     _globalInstance.put(key, value, transaction),
+
+  /**
+   * @desc merge previous value of key into new value
+   * @param {string} key - key to requested value
+   * @param {*} value - any javascript object to store
+   * @param {*=} data - additional optional data to write
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise} - resolve when value is created
+   */
+  assign: (key, value, data, transaction) =>
+    _globalInstance.assign(key, value, data, transaction),
 
   /**
    * @desc clears items in storage

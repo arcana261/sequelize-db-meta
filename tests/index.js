@@ -327,4 +327,161 @@ describe('sequelize-db-meta', () => {
       }).catch(done);
     });
   });
+
+  describe('#assign()', () => {
+    it('should add new scalar value to empty db', () =>
+      task.spawn(function* () {
+        yield metaDb.assign('my-key', 10);
+        expect(yield metaDb.get('my-key')).to.be.equal(10);
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', 'hello');
+        expect(yield metaDb.get('my-key')).to.be.equal('hello');
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', true);
+        expect(yield metaDb.get('my-key')).to.be.equal(true);
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', false);
+        expect(yield metaDb.get('my-key')).to.be.equal(false);
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', null);
+        expect(yield metaDb.get('my-key')).to.be.null;
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', undefined);
+        expect(yield metaDb.get('my-key')).to.be.undefined;
+      }));
+
+    it('should add new scalar over another scalar', () =>
+      task.spawn(function* () {
+        yield metaDb.assign('my-key', 10);
+        expect(yield metaDb.get('my-key')).to.be.equal(10);
+        yield metaDb.assign('my-key', 'hello');
+        expect(yield metaDb.get('my-key')).to.be.equal('hello');
+        yield metaDb.assign('my-key', true);
+        expect(yield metaDb.get('my-key')).to.be.equal(true);
+        yield metaDb.assign('my-key', false);
+        expect(yield metaDb.get('my-key')).to.be.equal(false);
+        yield metaDb.assign('my-key', null);
+        expect(yield metaDb.get('my-key')).to.be.null;
+        yield metaDb.assign('my-key', undefined);
+        expect(yield metaDb.get('my-key')).to.be.undefined;
+      }));
+
+    it('should assign complex object over scalar', () =>
+      task.spawn(function* () {
+        yield metaDb.assign('my-key', 10);
+        expect(yield metaDb.get('my-key')).to.be.equal(10);
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', 'hello');
+        expect(yield metaDb.get('my-key')).to.be.equal('hello');
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', true);
+        expect(yield metaDb.get('my-key')).to.be.equal(true);
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', false);
+        expect(yield metaDb.get('my-key')).to.be.equal(false);
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', null);
+        expect(yield metaDb.get('my-key')).to.be.null;
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', undefined);
+        expect(yield metaDb.get('my-key')).to.be.undefined;
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+      }));
+
+    it('should assign scalar over complex object', () =>
+      task.spawn(function* () {
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.assign('my-key', 10);
+        expect(yield metaDb.get('my-key')).to.be.equal(10);
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.assign('my-key', 'hello');
+        expect(yield metaDb.get('my-key')).to.be.equal('hello');
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.assign('my-key', true);
+        expect(yield metaDb.get('my-key')).to.be.equal(true);
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.assign('my-key', false);
+        expect(yield metaDb.get('my-key')).to.be.equal(false);
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.assign('my-key', null);
+        expect(yield metaDb.get('my-key')).to.be.null;
+        yield metaDb.clear();
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.assign('my-key', undefined);
+        expect(yield metaDb.get('my-key')).to.be.undefined;
+      }));
+
+    it('should assign complex object over complex objects', () =>
+      task.spawn(function* () {
+        yield metaDb.assign('my-key', {yyy: 'hello'});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello'
+        });
+        yield metaDb.assign('my-key', {xxx: 52});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: 'hello',
+          xxx: 52
+        });
+        yield metaDb.assign('my-key', {yyy: true});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: true,
+          xxx: 52
+        });
+        yield metaDb.assign('my-key', {yyy: {a: 5}});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: {a: 5},
+          xxx: 52
+        });
+        yield metaDb.assign('my-key', {yyy: {b: 10}});
+        expect(yield metaDb.get('my-key')).to.be.deep.equal({
+          yyy: {b: 10},
+          xxx: 52
+        });
+      }));
+  });
 });
