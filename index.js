@@ -50,7 +50,14 @@ class _SequelizeDbMetaPrefixInstance {
    * @return {string} - table name
    */
   get tableName() {
-    return this._master.tableName();
+    return this._master.tableName;
+  }
+
+  /**
+   * @desc {Model} - return sequelize schema Model object
+   */
+  get schema() {
+    return this._master.schema;
   }
 
   /**
@@ -289,6 +296,13 @@ class SequelizeDbMetaInstance {
     this._sequelize = sequelize;
     this._task = null;
     this._tableName = name;
+  }
+
+  /**
+   * @desc {Model} - return sequelize schema Model object
+   */
+  get schema() {
+    return this._table;
   }
 
   /**
