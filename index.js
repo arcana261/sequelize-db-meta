@@ -128,7 +128,20 @@ class _SequelizeDbMetaPrefixInstance {
    * @return {Promise} - resolves when value was added
    */
   put(key, value, data, transaction) {
-    return this._master.put(this._convertKey(key), value, transaction);
+    return this._master.put(this._convertKey(key), value, data, transaction);
+  }
+
+  /**
+   * @desc merge previous value of key into new value
+   * @param {string} key - key to requested value
+   * @param {*} value - any javascript object to store
+   * @param {*=} data - additional optional data to write
+   * @param {*=} transaction - optional sequelize transaction object
+   * @return {Promise} - resolve when value is created
+   */
+  assign(key, value, data, transaction) {
+    return this._master.assign(
+      this._convertKey(key), value, data, transaction);
   }
 
   /**
