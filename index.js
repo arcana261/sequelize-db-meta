@@ -708,12 +708,13 @@ module.exports = Object.freeze({
    * @desc sets value in storage
    * @param {string} key - target key
    * @param {*} value - new value to set
+   * @param {*=} data - additional optional data to merge
    * @param {*=} transaction - an instance to sequelize transaction object
    * @return {Promise} - resolves when value is set
    * @memberof SequelizeDbMeta
    */
-  put: (key, value, transaction) =>
-    _globalInstance.put(key, value, transaction),
+  put: (key, value, data, transaction) =>
+    _globalInstance.put(key, value, data, transaction),
 
   /**
    * @desc merge previous value of key into new value
