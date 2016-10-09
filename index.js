@@ -261,7 +261,7 @@ class SequelizeDbMetaInstance {
     delete options.expires;
 
     if (!this._noExpires) {
-      options.index = (options.index || []).concat([{
+      options.indexes = (options.indexes || []).concat([{
         name: 'expires_index',
         method: 'btree',
         fields: [{
