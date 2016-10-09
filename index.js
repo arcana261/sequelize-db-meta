@@ -257,14 +257,19 @@ class SequelizeDbMetaInstance {
       timestamps: false
     }, options);
 
-    options.index = (options.index || []).concat([{
-      name: 'expires_index',
-      method: 'btree',
-      fields: [{
-        attribute: 'expires',
-        order: 'desc'
-      }]
-    }]);
+    this._noExpires = options.expires === false;
+    delete options.expires;
+
+    if (!this._noExpires) {
+      options.index = (options.index || []).concat([{
+        name: 'expires_index',
+        method: 'btree',
+        fields: [{
+          attribute: 'expires',
+          order: 'desc'
+        }]
+      }]);
+    }
 
     this._table = sequelize.define(name, Object.assign({
       key: {
@@ -286,7 +291,8 @@ class SequelizeDbMetaInstance {
         set: function encodeValue(value) {
           this.setDataValue('value', JSON.stringify({value: value}));
         }
-      },
+      }
+    }, this._noExpires ? {} : {
       expires: {
         type: sequelize.Sequelize.DATE,
         allowNull: true
@@ -324,15 +330,16 @@ class SequelizeDbMetaInstance {
 
     return task.spawn(function * task() {
       let res = yield self._table.findOne(Object.assign({
-        where: {
-          key: key,
+        where: Object.assign({
+          key: key
+        }, self._noExpires ? {} : {
           expires: {
             $or: {
               $eq: null,
               $gt: new Date()
             }
           }
-        },
+        }),
         attributes: {
           exclude: ['key']
         }
@@ -419,15 +426,16 @@ class SequelizeDbMetaInstance {
    */
   delete(key, transaction) {
     return this._table.destroy(Object.assign({
-      where: {
-        key: key,
+      where: Object.assign({
+        key: key
+      }, this._noExpires ? {} : {
         expires: {
           $or: {
             $eq: null,
             $gt: new Date()
           }
         }
-      }
+      })
     }, type.isOptional(transaction) ? null : {
       transaction: transaction
     })).then(num => Promise.resolve(num > 0));
@@ -444,7 +452,8 @@ class SequelizeDbMetaInstance {
   put(key, value, data, transaction) {
     return this._table.upsert(Object.assign({
       key: key,
-      value: value,
+      value: value
+    }, this._noExpires ? {} : {
       expires: null
     }, data), type.isOptional(transaction) ? null : {
       transaction: transaction
@@ -489,6 +498,10 @@ class SequelizeDbMetaInstance {
    * @return {Promise} - resolves when expiration is set
    */
   expire(key, time, transaction) {
+    if (this._noExpires) {
+      return Promise.resolve();
+    }
+
     let date = new Date();
     const self = this;
     date.setSeconds(date.getSeconds() + time);
@@ -520,6 +533,10 @@ class SequelizeDbMetaInstance {
    * @return {Promise} - resolve when expired items are removed
    */
   gc(transaction) {
+    if (this._noExpires) {
+      return Promise.resolve();
+    }
+
     return this._table.destroy(Object.assign({
       where: {
         expires: {
@@ -537,15 +554,17 @@ class SequelizeDbMetaInstance {
    * default is every 20 minutes
    */
   monitor(schedule) {
-    if (!type.isOptional(this._task)) {
-      this._task.destroy();
-    }
+    if (!this._noExpires) {
+      if (!type.isOptional(this._task)) {
+        this._task.destroy();
+      }
 
-    if (type.isOptional(schedule)) {
-      schedule = '*/20 * * * *';
-    }
+      if (type.isOptional(schedule)) {
+        schedule = '*/20 * * * *';
+      }
 
-    this._task = scheduleGc(weak(this), schedule);
+      this._task = scheduleGc(weak(this), schedule);
+    }
   }
 
   /**
@@ -573,7 +592,7 @@ class SequelizeDbMetaInstance {
         attributes: [
           [self._sequelize.fn('COUNT', self._sequelize.col('*')), 'total']
         ],
-        where: Object.assign({
+        where: Object.assign(self._noExpires ? {} : {
           expires: {
             $or: {
               $eq: null,
@@ -602,7 +621,7 @@ class SequelizeDbMetaInstance {
    */
   all(start, length, pattern, where, transaction) {
     return this._table.findAll(Object.assign({
-      where: Object.assign({
+      where: Object.assign(this._noExpires ? {} : {
         expires: {
           $or: {
             $eq: null,
